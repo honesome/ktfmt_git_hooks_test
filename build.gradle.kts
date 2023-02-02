@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.ByteArrayOutputStream
 
 plugins {
-	id("org.springframework.boot") version "3.0.2"
+	id("org.springframework.boot") version "2.6.4"
 	id("io.spring.dependency-management") version "1.1.0"
 	kotlin("jvm") version "1.7.22"
 	kotlin("plugin.spring") version "1.7.22"
@@ -10,7 +11,7 @@ plugins {
 
 group = "com.example"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
 	mavenCentral()
@@ -27,7 +28,7 @@ dependencies {
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
-		jvmTarget = "17"
+		jvmTarget = "11"
 	}
 }
 
@@ -39,12 +40,43 @@ ktfmt {
 	removeUnusedImports.set(true)
 }
 
-tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
-	source = project.fileTree(rootDir)
-	include("**/*.kt")
-}
-
-
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+
+tasks.register<com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask>("ktfmtPrecommit") {
+	source = project.fileTree(rootDir)
+	println("Start source formatting using ktfmt")
+	val files =
+		ByteArrayOutputStream()
+			.use { outputStream ->
+				exec {
+					commandLine = listOf("git", "diff", "--name-only", "--cached", "--diff-filter=ACMRTUXB")
+					standardOutput = outputStream
+				}
+				outputStream.toString()
+			}
+			.split("\r\n", "\n")
+			.filter { it.endsWith(".kt") }
+
+	setIncludes(HashSet(files))
+}
+
+
+tasks.register("addKtfmtPrecommitHook") {
+	//copy the pre-commit file under script folder into .git folder
+	doLast {
+		val preCommitHook = project.file(".git/hooks/pre-commit")
+		if (!preCommitHook.exists()) {
+			val file = project.file("scripts/pre-commit")
+			file.copyTo(preCommitHook, overwrite = true)
+		}
+	}
+}
+
+tasks.getByName("build").dependsOn("addKtfmtPrecommitHook")
+
+
+
+

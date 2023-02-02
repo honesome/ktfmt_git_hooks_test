@@ -59,13 +59,12 @@ tasks.register<com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask>("ktfmtPrecommit") 
 			}
 			.split("\r\n", "\n")
 			.filter { it.endsWith(".kt") }
-
 	setIncludes(HashSet(files))
 }
 
 
 tasks.register("addKtfmtPrecommitHook") {
-	//copy the pre-commit file under script folder into .git folder
+	//copy the pre-commit file under scripts folder into /.git/hooks/ folder
 	doLast {
 		val preCommitHook = project.file(".git/hooks/pre-commit")
 		if (!preCommitHook.exists()) {
@@ -76,7 +75,7 @@ tasks.register("addKtfmtPrecommitHook") {
 }
 
 tasks.getByName("build").dependsOn("addKtfmtPrecommitHook")
-
+tasks.getByName("bootJar").dependsOn("addKtfmtPrecommitHook")
 
 
 

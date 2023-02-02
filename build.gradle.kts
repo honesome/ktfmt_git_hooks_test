@@ -46,8 +46,11 @@ tasks.withType<Test> {
 
 
 tasks.register<com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask>("ktfmtPrecommit") {
+	doFirst {
+		println("Start source formatting using ktfmt")
+	}
 	source = project.fileTree(rootDir)
-	println("Start source formatting using ktfmt")
+
 	val files =
 		ByteArrayOutputStream()
 			.use { outputStream ->
@@ -60,6 +63,11 @@ tasks.register<com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask>("ktfmtPrecommit") 
 			.split("\r\n", "\n")
 			.filter { it.endsWith(".kt") }
 	setIncludes(HashSet(files))
+
+	doLast {
+		println("Start source formatting finished")
+	}
+
 }
 
 
